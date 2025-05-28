@@ -1,0 +1,250 @@
+/* src/styles/App.css */
+
+/* ---------------- Global Styles & Resets ---------------- */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  background-color: #f8f9fa; /* Очень светлый серый фон для всего приложения */
+  color: #212529; /* Стандартный темный цвет текста Bootstrap */
+  line-height: 1.6;
+  margin: 0; /* Убираем отступы по умолчанию у body */
+}
+
+/* Чтобы footer корректно прижимался к низу */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main.container { /* Класс .container из Bootstrap уже имеет свои отступы */
+  flex-grow: 1; /* Основной контент занимает все доступное пространство */
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none; /* Убираем подчеркивание у ссылок по умолчанию */
+}
+
+a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+/* ---------------- Navbar & Footer (Дополнительные стили) ---------------- */
+.navbar-brand {
+  font-weight: 700; /* Более жирный шрифт для бренда */
+  font-size: 1.5rem;
+}
+
+.footer {
+  background-color: #343a40; /* Темный фон для футера */
+  color: rgba(255, 255, 255, 0.7); /* Приглушенный белый текст */
+  padding: 1.5rem 0;
+  font-size: 0.9rem;
+}
+.footer a {
+    color: rgba(255, 255, 255, 0.9);
+}
+.footer a:hover {
+    color: white;
+}
+
+
+/* ---------------- Login/Register Page Styles ---------------- */
+.auth-card {
+  max-width: 450px; /* Ограничиваем ширину карточек аутентификации */
+  margin: 2rem auto; /* Центрируем карточку и добавляем отступ сверху/снизу */
+}
+
+/* ---------------- Profile Page Styles ---------------- */
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  object-fit: cover; /* Чтобы изображение не искажалось */
+  border: 4px solid #dee2e6; /* Рамка вокруг аватара */
+}
+.interest-checkbox-list .form-check {
+    padding-left: 2.25rem; /* Увеличиваем отступ для чекбоксов, чтобы текст не наезжал */
+}
+.interest-checkbox-list .form-check-input {
+    margin-left: -2.25rem; /* Корректируем положение чекбокса */
+    margin-top: 0.3rem; /* Выравниваем по вертикали с текстом */
+}
+
+
+/* ---------------- Chat Page & Components Styles ---------------- */
+
+/* Контейнер для всей страницы чата */
+.chat-page-container {
+  /* Можно добавить стили, если нужны отступы или фон для всей страницы чата */
+}
+
+/* Общий контейнер для окна чата и списка участников */
+.chat-layout-container {
+  height: calc(100vh - 200px); /* Примерная высота (адаптировать под высоту навбара, футера и заголовка чата) */
+  /* min-height: 500px; */ /* Минимальная высота, чтобы чат не схлопывался */
+  display: flex; /* Для расположения списка участников и окна чата */
+  border: 1px solid #e0e0e0;
+  border-radius: 0.375rem; /* Bootstrap's default border-radius */
+  background-color: #fff; /* Белый фон для самого чата */
+  overflow: hidden; /* Чтобы внутренние скроллы работали */
+}
+
+/* Список участников */
+.participant-list-panel {
+  flex: 0 0 250px; /* Фиксированная ширина */
+  max-width: 300px; /* Максимальная ширина */
+  border-right: 1px solid #e0e0e0;
+  background-color: #f8f9fa; /* Слегка отличный фон */
+  display: flex;
+  flex-direction: column;
+}
+.participant-list-panel .list-group {
+    flex-grow: 1;
+    overflow-y: auto; /* Скролл для списка участников, если их много */
+}
+.participant-list-panel h5 {
+    font-size: 1.1rem;
+}
+
+/* Окно чата (сообщения + инпут) */
+.chat-window-panel {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Важно для правильной работы внутреннего скролла сообщений */
+}
+
+/* Область отображения сообщений */
+.message-list-container { /* Этот класс был на Card.Body в ChatWindow.js */
+  flex-grow: 1; /* Занимает все доступное место */
+  overflow-y: auto; /* Включает скролл для сообщений */
+  padding: 1rem;
+  background-color: #ffffff; /* Фон для списка сообщений */
+}
+
+/* Отдельное сообщение */
+.message-bubble {
+  padding: 0.6rem 1rem;
+  border-radius: 1.25rem;
+  max-width: 75%;
+  word-wrap: break-word;
+  display: inline-block; /* Чтобы тень и фон корректно облегали контент */
+  line-height: 1.4;
+}
+
+.message-bubble.sent {
+  background-color: #007bff; /* Синий для отправленных */
+  color: white;
+  border-bottom-right-radius: 0.3rem; /* "Хвостик" сообщения */
+}
+
+.message-bubble.received {
+  background-color: #e9ecef; /* Светло-серый для полученных */
+  color: #212529;
+  border-bottom-left-radius: 0.3rem; /* "Хвостик" сообщения */
+}
+
+.message-sender {
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+.message-sender img {
+  margin-right: 0.3rem;
+}
+.message-bubble.received .message-sender {
+  color: #0d6efd; /* Или другой цвет для выделения отправителя */
+}
+
+.message-time {
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  display: block; /* Чтобы всегда был на новой строке под текстом/картинкой */
+  text-align: right; /* Выравнивание времени по правому краю внутри bubble */
+}
+.message-time.sent {
+  color: rgba(255, 255, 255, 0.75);
+}
+.message-time.received {
+  color: #6c757d;
+}
+.message-bubble figure.figure { /* Для изображений в сообщениях */
+    margin: 0; /* Убираем стандартные отступы у Figure */
+}
+.message-bubble figure.figure img {
+    max-width: 100%; /* Чтобы картинка не вылезала за пределы bubble */
+    max-height: 250px; /* Ограничение высоты картинки */
+}
+
+
+/* Форма ввода сообщения */
+.message-input-area { /* Этот класс был на div в MessageInput.js */
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f8f9fa; /* Фон для области ввода */
+}
+
+
+/* ---------------- Адаптивность для чата ---------------- */
+@media (max-width: 768px) {
+  .participant-list-panel {
+    /* На маленьких экранах можно скрыть список участников или сделать его меньше */
+    flex: 0 0 180px; /* Уменьшаем ширину */
+    font-size: 0.9rem; /* Уменьшаем шрифт */
+  }
+  .participant-list-panel h5 {
+    font-size: 1rem;
+  }
+
+  /* Если решаете скрыть список участников на мобильных: */
+  /*
+  .participant-list-panel {
+    display: none;
+  }
+  .chat-layout-container {
+     height: calc(100vh - (высота навбара + высота заголовка чата + высота футера));
+  }
+  */
+}
+
+@media (max-width: 576px) {
+    .message-bubble {
+        max-width: 90%; /* На очень маленьких экранах сообщения могут занимать больше ширины */
+    }
+    .participant-list-panel {
+        display: none; /* Часто на мобильных список участников скрывают или делают доступным по кнопке */
+    }
+    .chat-layout-container {
+        height: calc(100vh - 160px); /* Адаптировать под высоту хедера и инпута */
+    }
+}
+
+/* ---------------- Спиннер загрузки (если нужен кастомный) ---------------- */
+.loading-spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1055; /* Выше чем Bootstrap модальные окна */
+}
+
+/* Улучшение для FloatingLabel в темных темах или кастомных фонах */
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+  opacity: .65;
+  transform: scale(.85) translateY(-.5rem) translateX(.15rem);
+  background-color: transparent !important; /* Чтобы label не перекрывал фон инпута */
+}
+.form-floating > .form-control:focus ~ label {
+    background-color: transparent !important;
+}
