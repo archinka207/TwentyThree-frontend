@@ -1,144 +1,123 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { jwtDecode } from 'jwt-decode'; // Библиотека для декодирования JWT токенов
-import apiClient from '../services/apiClient'; // Наш настроенный Axios экземпляр
-import { getUserProfile } from '../services/userService'; // Сервис для получения данных пользователя
+import { jwtDecode } from 'jwt-decode';
+import apiClient from '../services/apiClient';
+import { getUserProfile } from '../services/userService';
 
-// 1. Создаем контекст
-// Значение по умолчанию null, но оно будет переопределено провайдером
 export const AuthContext = createContext(null);
 
-// 2. Создаем компонент-провайдер
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null); // Данные текущего пользователя
-  const [token, setToken] = useState(localStorage.getItem('token')); // JWT токен из localStorage
-  const [loading, setLoading] = useState(true); // Индикатор начальной загрузки/проверки аутентификации
+  const [currentUser, setCurrentUser] = useState(null);
+  // Инициализируем токен из localStorage. Если его там нет, будет null.
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true); // Общая начальная загрузка
 
-  // Функция для загрузки деталей текущего пользователя с бэкенда
-  // useCallback используется для мемоизации функции, чтобы она не создавалась заново при каждом рендере,
-  // если ее зависимости не изменились. Это важно для useEffect.
-  const fetchCurrentUserDetails = useCallback(async (currentToken) => {
-    if (!currentToken) {
-      setCurrentUser(null);
+  const applyTokenToApiClient = (currentToken) => {
+    if (currentToken) {
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+    } else {
       delete apiClient.defaults.headers.common['Authorization'];
+    }
+  };
+
+  const fetchCurrentUserDetails = useCallback(async (currentTokenForFetch) => {
+    if (!currentTokenForFetch) {
+      setCurrentUser(null);
+      applyTokenToApiClient(null); // Убедимся, что заголовок удален
       setLoading(false);
-      return;
+      return null; // Возвращаем null, если нет токена
     }
 
+    applyTokenToApiClient(currentTokenForFetch); // Устанавливаем заголовок перед запросом
     try {
-      // Устанавливаем токен в заголовки apiClient для этого запроса (и последующих)
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
-      const userProfile = await getUserProfile(); // Запрос на /api/users/me
-      setCurrentUser(userProfile); // Сохраняем данные пользователя
+      const userProfile = await getUserProfile();
+      setCurrentUser(userProfile);
+      setLoading(false);
+      return userProfile; // Возвращаем данные пользователя
     } catch (error) {
       console.error("AuthContext: Failed to fetch user details:", error);
-      // Если не удалось загрузить данные (например, токен невалиден на бэкенде),
-      // сбрасываем пользователя и токен.
       setCurrentUser(null);
       localStorage.removeItem('token'); // Удаляем невалидный токен
-      setToken(null); // Обновляем состояние токена в AuthContext
-      delete apiClient.defaults.headers.common['Authorization'];
-    } finally {
-      setLoading(false); // Завершаем загрузку
+      setToken(null);                   // Сбрасываем токен в стейте
+      applyTokenToApiClient(null);      // Удаляем заголовок
+      setLoading(false);
+      return null; // Возвращаем null в случае ошибки
     }
-  }, []); // Пустой массив зависимостей, т.к. getUserProfile не зависит от внешних переменных этого компонента
+  }, []); // Пустой массив зависимостей, так как зависимости (getUserProfile) стабильны
 
-  // Эффект для проверки токена при инициализации приложения или при изменении токена
+  // Эффект для первоначальной загрузки и валидации токена
   useEffect(() => {
-    setLoading(true); // Начинаем загрузку при проверке токена
-    const storedToken = localStorage.getItem('token'); // Проверяем localStorage еще раз
-
-    if (storedToken) {
+    const initialToken = localStorage.getItem('token');
+    if (initialToken) {
       try {
-        const decodedToken = jwtDecode(storedToken); // Декодируем токен
-        // Проверяем срок действия токена
-        if (decodedToken.exp * 1000 > Date.now()) {
-          // Токен валиден и не истек, загружаем данные пользователя
-          setToken(storedToken); // Устанавливаем токен в состояние, если он еще не там
-          fetchCurrentUserDetails(storedToken);
+        const decoded = jwtDecode(initialToken);
+        if (decoded.exp * 1000 > Date.now()) {
+          setToken(initialToken); // Устанавливаем токен в стейт
+          fetchCurrentUserDetails(initialToken); // Загружаем пользователя
         } else {
-          // Токен истек
-          console.log("AuthContext: Token expired on initial check.");
+          console.log("AuthContext: Token expired on initial load.");
           localStorage.removeItem('token');
           setToken(null);
           setCurrentUser(null);
-          delete apiClient.defaults.headers.common['Authorization'];
+          applyTokenToApiClient(null);
           setLoading(false);
         }
-      } catch (error) {
-        // Ошибка декодирования (невалидный токен)
-        console.error("AuthContext: Invalid token on initial check:", error);
+      } catch (e) {
+        console.error("AuthContext: Invalid token on initial load.", e);
         localStorage.removeItem('token');
         setToken(null);
         setCurrentUser(null);
-        delete apiClient.defaults.headers.common['Authorization'];
+        applyTokenToApiClient(null);
         setLoading(false);
       }
     } else {
-      // Нет токена в localStorage
+      // Нет токена, завершаем начальную загрузку
+      applyTokenToApiClient(null); // Убедимся, что заголовок удален
       setCurrentUser(null);
-      delete apiClient.defaults.headers.common['Authorization'];
       setLoading(false);
     }
-  }, [fetchCurrentUserDetails]); // Запускается один раз и при изменении fetchCurrentUserDetails (что стабильно из-за useCallback)
+  }, [fetchCurrentUserDetails]); // Запускается один раз при монтировании
 
 
-  // Функция для входа пользователя
   const login = useCallback(async (newToken) => {
-    setLoading(true); // Начинаем загрузку
-    localStorage.setItem('token', `Bearer ${newToken}`); // Сохраняем токен в localStorage
-    setToken(`Bearer ${newToken}`); // Обновляем состояние токена, что вызовет useEffect для загрузки данных пользователя
-    // fetchCurrentUserDetails(newToken) будет вызван через useEffect при изменении токена
-  }, []); // fetchCurrentUserDetails стабилен благодаря useCallback
+    if (!newToken) {
+        console.error("AuthContext: Attempted to login with a null or undefined token.");
+        // Можно выбросить ошибку или просто ничего не делать
+        return Promise.reject(new Error("Invalid token provided for login."));
+    }
+    localStorage.setItem('token', newToken);
+    setToken(newToken); // Обновляем токен в стейте
+    // После установки токена, немедленно пытаемся загрузить данные пользователя
+    // Это важно, чтобы currentUser обновился как можно скорее.
+    // setLoading(true) здесь может быть излишним, т.к. fetchCurrentUserDetails уже управляет loading.
+    setLoading(true); // Указываем, что идет процесс (логин + загрузка пользователя)
+    return fetchCurrentUserDetails(newToken); // Возвращаем Promise от fetchCurrentUserDetails
+  }, [fetchCurrentUserDetails]);
 
-  // Функция для выхода пользователя
   const logout = useCallback(() => {
-    setLoading(true); // Можно показать короткую загрузку для выхода
     localStorage.removeItem('token');
-    setToken(null); // Обновляем состояние токена, что вызовет useEffect для сброса пользователя
-    // setCurrentUser(null) и delete apiClient.defaults... будут выполнены в useEffect
-    // setLoading(false) также будет вызван в useEffect
-    // Если нужно немедленное обновление UI без ожидания useEffect:
-    // setCurrentUser(null);
-    // delete apiClient.defaults.headers.common['Authorization'];
-    // setLoading(false);
+    setToken(null);
+    setCurrentUser(null);
+    applyTokenToApiClient(null); // Удаляем заголовок из apiClient
+    // setLoading(false) не нужно здесь, т.к. нет асинхронной операции
+    // Если после logout есть редирект на страницу, которая делает запрос, loading может быть полезен
   }, []);
 
-  // Функция для обновления данных currentUser из других частей приложения
-  // (например, после редактирования профиля, чтобы ник или аватар обновились в Navbar)
   const updateUserContext = useCallback((updatedUserData) => {
-    setCurrentUser(prevUser => {
-      if (prevUser) {
-        return { ...prevUser, ...updatedUserData };
-      }
-      return updatedUserData; // Если prevUser был null, просто устанавливаем новые данные
-    });
+    setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updatedUserData } : updatedUserData);
   }, []);
 
-  // Собираем значение, которое будет предоставлено контекстом
   const contextValue = {
     currentUser,
     token,
-    loading, // Состояние загрузки (полезно для отображения спиннеров)
+    loading,
     login,
     logout,
     updateUserContext,
-    fetchCurrentUserDetails // Можно экспортировать, если нужно вызвать принудительно
+    // fetchCurrentUserDetails можно не экспортировать, если он используется только внутри
   };
 
-  // Предоставляем значение контекста всем дочерним компонентам
-  // Не рендерим дочерние компоненты, пока идет начальная загрузка,
-  // чтобы избежать проблем с ProtectedRoute и отображением данных до того, как пользователь определен.
-  // Однако, если loading=true только из-за login/logout, дочерние компоненты могут быть видны.
-  // Решение: можно иметь отдельный initialLoading стейт.
-  // Пока что, если loading=true, то ProtectedRoute покажет свой спиннер.
   return (
     <AuthContext.Provider value={contextValue}>
-      {/* Если !loading, то рендерим детей. Если loading, то дети не рендерятся
-          Это предотвратит преждевременный рендер компонентов, которые зависят от currentUser.
-          Однако, это может привести к тому, что ничего не будет видно, пока loading=true.
-          ProtectedRoute сам обрабатывает состояние loading.
-          Поэтому здесь можно всегда рендерить children, а ProtectedRoute разберется.
-      */}
       {children}
     </AuthContext.Provider>
   );
