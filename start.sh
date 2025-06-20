@@ -1,1 +1,0 @@
-npx serve -s build
