@@ -3,7 +3,7 @@ import axios from 'axios';
 // Получаем базовый URL API из переменных окружения
 // Файл .env в корне проекта должен содержать:
 // REACT_APP_API_BASE_URL=http://localhost:8080/api
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://brilliant-liberation-production.up.railway.app:8080/api';
 
 // Создаем экземпляр axios с базовой конфигурацией
 const apiClient = axios.create({
